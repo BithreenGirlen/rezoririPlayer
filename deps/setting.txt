@@ -1,0 +1,11 @@
+﻿{
+    "fileExtensions":
+    {
+        "atlas": ".atlas",
+        "skeleton": ".skel",
+        "scenarioScript": ".xml",
+        "voice": ".m4a"
+    },
+    "fontPath": "C:\Windows\Fonts\yumindb.ttf",
+    "translation": true
+}
