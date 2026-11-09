@@ -301,7 +301,7 @@ void CRaylibSpineDrawable::draw(float fScale, float fOffsetX, float fOffsetY)
 			raylibBlendMode = BlendMode::BLEND_MULTIPLIED;
 			break;
 		case spine::BlendMode::BlendMode_Screen:
-			::rlSetBlendFactorsSeparate(RL_ONE, RL_ONE_MINUS_SRC_COLOR, RL_FUNC_ADD, RL_ONE, RL_ONE_MINUS_SRC_ALPHA, RL_FUNC_ADD);
+			::rlSetBlendFactorsSeparate(RL_ONE, RL_ONE_MINUS_SRC_COLOR, RL_ONE, RL_ONE_MINUS_SRC_ALPHA, RL_FUNC_ADD, RL_FUNC_ADD);
 			raylibBlendMode = BlendMode::BLEND_CUSTOM_SEPARATE;
 			break;
 		default: /* spine::BlendMode::BlendMode_Normal */
