@@ -42,6 +42,8 @@ add_executable(
 	"${RAYLIB_SPINE_DIR}/spine_loader.cpp" "${RAYLIB_SPINE_DIR}/spine_loader.h"
 	"${RAYLIB_SPINE_DIR}/spine_player.cpp" "${RAYLIB_SPINE_DIR}/spine_player.h"
 	"${RAYLIB_SPINE_DIR}/spine_file_verifier.cpp" "${RAYLIB_SPINE_DIR}/spine_file_verifier.h"
+	"${RAYLIB_SPINE_DIR}/spine_shared_ptr.h"
+	"${RAYLIB_SPINE_DIR}/spine_unique_ptr.h"
 	"${IMGUI_DIR}/imconfig.h"
 	"${IMGUI_DIR}/imgui.cpp" "${IMGUI_DIR}/imgui.h"
 	"${IMGUI_DIR}/imgui_demo.cpp"

@@ -5,7 +5,6 @@
 
 #include <string>
 #include <vector>
-#include <memory>
 #include <unordered_map>
 
 #include "raylib_spine_drawable.h"
@@ -127,9 +126,7 @@ protected:
 	enum Constants { kBaseWidth = 1280, kBaseHeight = 720};
 
 	CTextureLoader m_textureLoader;
-	std::vector<std::shared_ptr<spine::Atlas>> m_atlases;
-	std::vector<std::shared_ptr<spine::SkeletonData>> m_skeletonData;
-	std::vector<std::unique_ptr<CSpineDrawable>> m_drawables;
+	std::vector<SpineUniquePtr<CSpineDrawable>> m_drawables;
 
 	FPoint2 m_fBaseSize = FPoint2{ kBaseWidth, kBaseHeight };
 
@@ -152,7 +149,6 @@ protected:
 	bool m_isDrawOrderReversed = false;
 
 	void clearDrawables();
-	bool addDrawable(spine::SkeletonData* pSkeletonData);
 	bool setupDrawables();
 
 	virtual void workOutDefaultScale() noexcept = 0;

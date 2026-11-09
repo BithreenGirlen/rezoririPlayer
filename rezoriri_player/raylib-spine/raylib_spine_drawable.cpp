@@ -7,44 +7,35 @@
 #include <rlgl.h>
 
 #if defined(SPINE_42)
-static_assert(static_cast<spine::Physics>(CRaylibSpineDrawable::Physics::None) == spine::Physics::Physics_None, "Physics_None");
-static_assert(static_cast<spine::Physics>(CRaylibSpineDrawable::Physics::Reset) == spine::Physics::Physics_Reset, "Physics_Reset");
-static_assert(static_cast<spine::Physics>(CRaylibSpineDrawable::Physics::Update) == spine::Physics::Physics_Update, "Physics_Update");
-static_assert(static_cast<spine::Physics>(CRaylibSpineDrawable::Physics::Pose) == spine::Physics::Physics_Pose, "Physics_Pose");
+	static_assert(static_cast<spine::Physics>(CRaylibSpineDrawable::Physics::None) == spine::Physics::Physics_None, "Physics_None");
+	static_assert(static_cast<spine::Physics>(CRaylibSpineDrawable::Physics::Reset) == spine::Physics::Physics_Reset, "Physics_Reset");
+	static_assert(static_cast<spine::Physics>(CRaylibSpineDrawable::Physics::Update) == spine::Physics::Physics_Update, "Physics_Update");
+	static_assert(static_cast<spine::Physics>(CRaylibSpineDrawable::Physics::Pose) == spine::Physics::Physics_Pose, "Physics_Pose");
 #endif
 
-CRaylibSpineDrawable::CRaylibSpineDrawable(spine::SkeletonData* pSkeletonData)
+CRaylibSpineDrawable::CRaylibSpineDrawable(SpineSharedPtr<spine::Atlas> atlas, SpineSharedPtr<spine::SkeletonData> skeletonData)
+	:m_atlas(atlas), m_skeletonData(skeletonData)
 {
 	spine::Bone::setYDown(true);
 
-	m_skeleton = new spine::Skeleton(pSkeletonData);
-	spine::AnimationStateData* pAnimationStateData = new spine::AnimationStateData(pSkeletonData);
-	m_animationState = new spine::AnimationState(pAnimationStateData);
+	m_skeleton = SpineUniquePtr<spine::Skeleton>::MakeUnique(m_skeletonData.get());
+	m_animationStateData = SpineUniquePtr<spine::AnimationStateData>::MakeUnique(m_skeletonData.get());
+	m_animationState = SpineUniquePtr<spine::AnimationState>::MakeUnique(m_animationStateData.get());
 }
 
-CRaylibSpineDrawable::~CRaylibSpineDrawable()
+SpineUniquePtr<CRaylibSpineDrawable> CRaylibSpineDrawable::duplicate()
 {
-	if (m_animationState != nullptr)
-	{
-		spine::AnimationStateData* pAnimationStateData = m_animationState->getData();
-		delete pAnimationStateData;
-
-		delete m_animationState;
-	}
-	if (m_skeleton != nullptr)
-	{
-		delete m_skeleton;
-	}
+	return SpineUniquePtr<CRaylibSpineDrawable>::MakeUnique(m_atlas, m_skeletonData);
 }
 
 spine::Skeleton* CRaylibSpineDrawable::skeleton() const noexcept
 {
-	return m_skeleton;
+	return m_skeleton.get();
 }
 
 spine::AnimationState* CRaylibSpineDrawable::animationState() const noexcept
 {
-	return m_animationState;
+	return m_animationState.get();
 }
 
 void CRaylibSpineDrawable::premultiplyAlpha(bool premultiplied) noexcept

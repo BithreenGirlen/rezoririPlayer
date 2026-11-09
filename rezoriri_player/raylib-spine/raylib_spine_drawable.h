@@ -1,13 +1,13 @@
 ﻿#ifndef RAYLIB_SPINE_DRAWABLE_H_
 #define RAYLIB_SPINE_DRAWABLE_H_
 
-/* Avoid conflict between <MathUtils.h> and <Windows.h> */
-#if defined(min)
-	#undef min
-#endif
-#if defined(max)
-	#undef max
-#endif
+/*
+* Todo: if there is no need to share spine::Atlas nor spine::SkeletonData,
+* raw pointer would be better without dependping on these containers. 
+*/
+#include "spine_shared_ptr.h"
+#include "spine_unique_ptr.h"
+
 #include <spine/spine.h>
 
 #include <raylib.h>
@@ -15,8 +15,11 @@
 class CRaylibSpineDrawable
 {
 public:
-	CRaylibSpineDrawable(spine::SkeletonData* pSkeletonData);
-	~CRaylibSpineDrawable();
+	explicit CRaylibSpineDrawable(SpineSharedPtr<spine::Atlas> atlas, SpineSharedPtr<spine::SkeletonData> skeletonData);
+	~CRaylibSpineDrawable() = default;
+
+	/// @brief Atlas並びSkeletonDataを共有して複製
+	[[nodiscard]] SpineUniquePtr<CRaylibSpineDrawable> duplicate();
 
 	spine::Skeleton* skeleton() const noexcept;
 	spine::AnimationState* animationState() const noexcept;
@@ -78,13 +81,16 @@ private:
 	bool m_isPaused = false;
 	Physics m_physics = Physics::Update;
 
-	spine::Skeleton* m_skeleton = nullptr;
-	spine::AnimationState* m_animationState = nullptr;
+	SpineSharedPtr<spine::Atlas> m_atlas;
+	SpineSharedPtr<spine::SkeletonData> m_skeletonData;
+
+	SpineUniquePtr<spine::Skeleton> m_skeleton;
+	SpineUniquePtr<spine::AnimationStateData> m_animationStateData;
+	SpineUniquePtr<spine::AnimationState> m_animationState;
+	spine::SkeletonClipping m_skeletonClipping;
 
 	spine::Vector<float> m_worldVertices;
 	spine::Vector<RayLibVertex2D> m_raylibVertices;
-
-	spine::SkeletonClipping m_skeletonClipping;
 
 	spine::Vector<spine::String> m_slotsToExclude;
 

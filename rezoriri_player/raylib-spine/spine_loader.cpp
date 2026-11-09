@@ -7,17 +7,17 @@
 #include <spine/TextureLoader.h>
 
 
-std::shared_ptr<spine::Atlas> spine_loader::CreateAtlasFromFile(const char* filePath, spine::TextureLoader* textureLoader)
+SpineSharedPtr<spine::Atlas> spine_loader::CreateAtlasFromFile(const char* filePath, spine::TextureLoader* textureLoader)
 {
-	return std::make_shared<spine::Atlas>(filePath, textureLoader);
+	return SpineSharedPtr<spine::Atlas>::MakeShared(filePath, textureLoader);
 }
 
-std::shared_ptr<spine::Atlas> spine_loader::CreateAtlasFromMemory(const char* atlasFileData, int atlasFileDataLength, const char* textureDirectory, spine::TextureLoader* textureLoader)
+SpineSharedPtr<spine::Atlas> spine_loader::CreateAtlasFromMemory(const char* atlasFileData, int atlasFileDataLength, const char* textureDirectory, spine::TextureLoader* textureLoader)
 {
-	return std::make_shared<spine::Atlas>(atlasFileData, atlasFileDataLength, textureDirectory, textureLoader);
+	return SpineSharedPtr<spine::Atlas>::MakeShared(atlasFileData, atlasFileDataLength, textureDirectory, textureLoader);
 }
 
-std::shared_ptr<spine::SkeletonData> spine_loader::ReadTextSkeletonFromFile(const char* filePath, spine::Atlas* atlas)
+SpineSharedPtr<spine::SkeletonData> spine_loader::ReadTextSkeletonFromFile(const char* filePath, spine::Atlas* atlas)
 {
 	spine::SkeletonJson json(atlas);
 	json.setScale(1.f);
@@ -28,10 +28,10 @@ std::shared_ptr<spine::SkeletonData> spine_loader::ReadTextSkeletonFromFile(cons
 		return nullptr;
 	}
 
-	return std::shared_ptr<spine::SkeletonData>(skeletonData);
+	return SpineSharedPtr<spine::SkeletonData>(skeletonData);
 }
 
-std::shared_ptr<spine::SkeletonData> spine_loader::ReadBinarySkeletonFromFile(const char* filePath, spine::Atlas* atlas)
+SpineSharedPtr<spine::SkeletonData> spine_loader::ReadBinarySkeletonFromFile(const char* filePath, spine::Atlas* atlas)
 {
 	spine::SkeletonBinary binary(atlas);
 	binary.setScale(1.f);
@@ -42,10 +42,10 @@ std::shared_ptr<spine::SkeletonData> spine_loader::ReadBinarySkeletonFromFile(co
 		return nullptr;
 	}
 
-	return std::shared_ptr<spine::SkeletonData>(skeletonData);
+	return SpineSharedPtr<spine::SkeletonData>(skeletonData);
 }
 
-std::shared_ptr<spine::SkeletonData> spine_loader::ReadTextSkeletonFromMemory(const char* skeletonJson, spine::Atlas* atlas)
+SpineSharedPtr<spine::SkeletonData> spine_loader::ReadTextSkeletonFromMemory(const char* skeletonJson, spine::Atlas* atlas)
 {
 	spine::SkeletonJson json(atlas);
 	json.setScale(1.f);
@@ -56,10 +56,10 @@ std::shared_ptr<spine::SkeletonData> spine_loader::ReadTextSkeletonFromMemory(co
 		return nullptr;
 	}
 
-	return std::shared_ptr<spine::SkeletonData>(skeletonData);
+	return SpineSharedPtr<spine::SkeletonData>(skeletonData);
 }
 
-std::shared_ptr<spine::SkeletonData> spine_loader::ReadBinarySkeletonFromMemory(const unsigned char* skeletonBinary, int skeletonLength, spine::Atlas* atlas)
+SpineSharedPtr<spine::SkeletonData> spine_loader::ReadBinarySkeletonFromMemory(const unsigned char* skeletonBinary, int skeletonLength, spine::Atlas* atlas)
 {
 	spine::SkeletonBinary binary(atlas);
 	binary.setScale(1.f);
@@ -70,5 +70,5 @@ std::shared_ptr<spine::SkeletonData> spine_loader::ReadBinarySkeletonFromMemory(
 		return nullptr;
 	}
 
-	return std::shared_ptr<spine::SkeletonData>(skeletonData);
+	return SpineSharedPtr<spine::SkeletonData>(skeletonData);
 }
