@@ -82,7 +82,6 @@ private:
 	spine::AnimationState* m_animationState = nullptr;
 
 	spine::Vector<float> m_worldVertices;
-	spine::Vector<unsigned short> m_quadIndices;
 	spine::Vector<RayLibVertex2D> m_raylibVertices;
 
 	spine::SkeletonClipping m_skeletonClipping;

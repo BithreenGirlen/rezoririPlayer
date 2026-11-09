@@ -20,13 +20,6 @@ CRaylibSpineDrawable::CRaylibSpineDrawable(spine::SkeletonData* pSkeletonData)
 	m_skeleton = new spine::Skeleton(pSkeletonData);
 	spine::AnimationStateData* pAnimationStateData = new spine::AnimationStateData(pSkeletonData);
 	m_animationState = new spine::AnimationState(pAnimationStateData);
-
-	m_quadIndices.add(0);
-	m_quadIndices.add(1);
-	m_quadIndices.add(2);
-	m_quadIndices.add(2);
-	m_quadIndices.add(3);
-	m_quadIndices.add(0);
 }
 
 CRaylibSpineDrawable::~CRaylibSpineDrawable()
@@ -126,8 +119,11 @@ void CRaylibSpineDrawable::update(float fDelta)
 
 void CRaylibSpineDrawable::draw(float fScale, float fOffsetX, float fOffsetY)
 {
-	if (m_skeleton == nullptr || m_animationState == nullptr)return;
+	static unsigned short s_quadIndices[] = { 0, 1, 2, 2, 3, 0 };
+	static constexpr size_t kQuadIndicesSize = sizeof(s_quadIndices) / sizeof(unsigned short);
 
+	if (!m_isVisible)return;
+	if (m_skeleton == nullptr || m_animationState == nullptr)return;
 	if (m_skeleton->getColor().a == 0) return;
 
 	for (size_t i = 0; i < m_skeleton->getSlots().size(); ++i)
@@ -149,7 +145,8 @@ void CRaylibSpineDrawable::draw(float fScale, float fOffsetX, float fOffsetY)
 
 		spine::Vector<float>* pVertices = &m_worldVertices;
 		spine::Vector<float>* pAttachmentUvs = nullptr;
-		spine::Vector<unsigned short>* pIndices = nullptr;
+		unsigned short* pIndices = nullptr;
+		size_t indicesCount = 0;
 
 		spine::Color* pAttachmentColor = nullptr;
 
@@ -173,7 +170,9 @@ void CRaylibSpineDrawable::draw(float fScale, float fOffsetX, float fOffsetY)
 			pRegionAttachment->computeWorldVertices(slot.getBone(), m_worldVertices, 0, 2);
 #endif
 			pAttachmentUvs = &pRegionAttachment->getUVs();
-			pIndices = &m_quadIndices;
+			pIndices = s_quadIndices;
+			indicesCount = kQuadIndicesSize;
+
 #if defined (SPINE_41) || defined (SPINE_42)
 			spine::AtlasRegion* pAtlasRegion = static_cast<spine::AtlasRegion*>(pRegionAttachment->getRegion());
 
@@ -200,7 +199,8 @@ void CRaylibSpineDrawable::draw(float fScale, float fOffsetX, float fOffsetY)
 			m_worldVertices.setSize(pMeshAttachment->getWorldVerticesLength(), 0);
 			pMeshAttachment->computeWorldVertices(slot, 0, pMeshAttachment->getWorldVerticesLength(), m_worldVertices, 0, 2);
 			pAttachmentUvs = &pMeshAttachment->getUVs();
-			pIndices = &pMeshAttachment->getTriangles();
+			pIndices = pMeshAttachment->getTriangles().buffer();
+			indicesCount = pMeshAttachment->getTriangles().size();
 
 #if defined (SPINE_41) || defined (SPINE_42)
 			spine::AtlasRegion* pAtlasRegion = static_cast<spine::AtlasRegion*>(pMeshAttachment->getRegion());
@@ -235,7 +235,7 @@ void CRaylibSpineDrawable::draw(float fScale, float fOffsetX, float fOffsetY)
 
 		if (m_skeletonClipping.isClipping())
 		{
-			m_skeletonClipping.clipTriangles(m_worldVertices, *pIndices, *pAttachmentUvs, 2);
+			m_skeletonClipping.clipTriangles(m_worldVertices.buffer(), pIndices, indicesCount, pAttachmentUvs->buffer(), 2);
 			if (m_skeletonClipping.getClippedTriangles().size() == 0)
 			{
 				m_skeletonClipping.clipEnd(slot);
@@ -243,10 +243,11 @@ void CRaylibSpineDrawable::draw(float fScale, float fOffsetX, float fOffsetY)
 			}
 			pVertices = &m_skeletonClipping.getClippedVertices();
 			pAttachmentUvs = &m_skeletonClipping.getClippedUVs();
-			pIndices = &m_skeletonClipping.getClippedTriangles();
+			pIndices = m_skeletonClipping.getClippedTriangles().buffer();
+			indicesCount = m_skeletonClipping.getClippedTriangles().size();
 		}
 
-		const spine::Color tint
+		const spine::Color spineTint
 		{
 			m_skeleton->getColor().r * slot.getColor().r * pAttachmentColor->r,
 			m_skeleton->getColor().g * slot.getColor().g * pAttachmentColor->g,
@@ -254,21 +255,31 @@ void CRaylibSpineDrawable::draw(float fScale, float fOffsetX, float fOffsetY)
 			m_skeleton->getColor().a * slot.getColor().a * pAttachmentColor->a,
 		};
 
-		m_raylibVertices.setSize(pIndices->size(), {});
-		for (int ii = 0; ii < pIndices->size(); ++ii)
+		const Color raylibTint
+		{
+			static_cast<unsigned char>(spineTint.r * 255.f * (m_isAlphaPremultiplied ? spineTint.a : 1.f)),
+			static_cast<unsigned char>(spineTint.g * 255.f * (m_isAlphaPremultiplied ? spineTint.a : 1.f)),
+			static_cast<unsigned char>(spineTint.b * 255.f * (m_isAlphaPremultiplied ? spineTint.a : 1.f)),
+			static_cast<unsigned char>(spineTint.a * 255.f)
+		};
+
+		m_raylibVertices.setSize(indicesCount, {});
+		for (size_t ii = 0; ii < indicesCount; ++ii)
 		{
 			auto& raylibVertex2d = m_raylibVertices[ii];
 
-			raylibVertex2d.pos.x = (*pVertices)[(*pIndices)[ii] * 2LL] * fScale + fOffsetX;
-			raylibVertex2d.pos.y = (*pVertices)[(*pIndices)[ii] * 2LL + 1] * fScale + fOffsetY;
+			raylibVertex2d.pos.x = (*pVertices)[pIndices[ii] * 2LL] * fScale + fOffsetX;
+			raylibVertex2d.pos.y = (*pVertices)[pIndices[ii] * 2LL + 1] * fScale + fOffsetY;
 
-			raylibVertex2d.color.r = static_cast<unsigned char>(tint.r * 255.f * (m_isAlphaPremultiplied ? tint.a : 1.f));
-			raylibVertex2d.color.g = static_cast<unsigned char>(tint.g * 255.f * (m_isAlphaPremultiplied ? tint.a : 1.f));
-			raylibVertex2d.color.b = static_cast<unsigned char>(tint.b * 255.f * (m_isAlphaPremultiplied ? tint.a : 1.f));
-			raylibVertex2d.color.a = static_cast<unsigned char>(tint.a * 255.f);
+			/* 
+			 * The RayLibVertex2D::color would not be necessary in this case
+			 * because raylibTint can be directly referred to in ::rlColor4ub(),
+			 * but left unleaved for clarity.
+			 */
+			memcpy(&raylibVertex2d.color, &raylibTint, sizeof(Color));
 
-			raylibVertex2d.tex.x = (*pAttachmentUvs)[(*pIndices)[ii] * 2LL];
-			raylibVertex2d.tex.y = (*pAttachmentUvs)[(*pIndices)[ii] * 2LL + 1];
+			raylibVertex2d.tex.x = (*pAttachmentUvs)[pIndices[ii] * 2LL];
+			raylibVertex2d.tex.y = (*pAttachmentUvs)[pIndices[ii] * 2LL + 1];
 		}
 
 		BlendMode raylibBlendMode;
@@ -304,11 +315,11 @@ void CRaylibSpineDrawable::draw(float fScale, float fOffsetX, float fOffsetY)
 		::rlBegin(RL_QUADS);
 
 		/* Triangles to Quads. */
-		for (int ii = 0; ii < m_raylibVertices.size(); ii += 3)
+		for (size_t ii = 0; ii < m_raylibVertices.size(); ii += 3)
 		{
-			for (int k = 2; k >= 0; --k)
+			for (long long k = 2; k >= 0; --k)
 			{
-				auto& raylibVertex2d = m_raylibVertices[static_cast<size_t>(ii + k)];
+				auto& raylibVertex2d = m_raylibVertices[ii + k];
 
 				::rlColor4ub(raylibVertex2d.color.r, raylibVertex2d.color.g, raylibVertex2d.color.b, raylibVertex2d.color.a);
 				::rlTexCoord2f(raylibVertex2d.tex.x, raylibVertex2d.tex.y);
