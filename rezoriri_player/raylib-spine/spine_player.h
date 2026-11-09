@@ -155,8 +155,8 @@ protected:
 	bool addDrawable(spine::SkeletonData* pSkeletonData);
 	bool setupDrawables();
 
-	virtual void workOutDefaultScale() = 0;
-	virtual void workOutDefaultSizeAndOffset() = 0;
+	virtual void workOutDefaultScale() noexcept = 0;
+	virtual bool workOutDefaultSizeAndOffset() = 0;
 
 	void updatePosition();
 

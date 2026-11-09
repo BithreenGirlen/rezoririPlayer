@@ -18,8 +18,8 @@ public:
 		return getCurrentBoundingOfSlot(slotName, nameSize - 1);
 	}
 private:
-	void workOutDefaultScale() override;
-	void workOutDefaultSizeAndOffset() override;
+	void workOutDefaultScale() noexcept override;
+	bool workOutDefaultSizeAndOffset() override;
 };
 
 #endif // !RAYLIB_SPINE_PLAYER_H_

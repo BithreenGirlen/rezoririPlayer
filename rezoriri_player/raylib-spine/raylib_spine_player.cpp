@@ -53,28 +53,28 @@ Rectangle CRaylibSpinePlayer::getCurrentBoundingOfSlot(const char* slotName, siz
 	return {};
 }
 
-void CRaylibSpinePlayer::workOutDefaultScale()
+void CRaylibSpinePlayer::workOutDefaultScale() noexcept
 {
 	m_fDefaultScale = 1.f;
 
-	int skeletonWidth = static_cast<int>(m_fBaseSize.x);
-	int skeletonHeight = static_cast<int>(m_fBaseSize.y);
+	const int skeletonWidth = static_cast<int>(m_fBaseSize.x);
+	const int skeletonHeight = static_cast<int>(m_fBaseSize.y);
 
-	int monitor = ::GetCurrentMonitor();
+	const int monitor = ::GetCurrentMonitor();
 
-	int desktopWidth = ::GetMonitorWidth(monitor);
-	int desktopHeight = ::GetMonitorHeight(monitor);
+	const int desktopWidth = ::GetMonitorWidth(monitor);
+	const int desktopHeight = ::GetMonitorHeight(monitor);
 
 	if (skeletonWidth > desktopWidth || skeletonHeight > desktopHeight)
 	{
-		float scaleX = static_cast<float>(desktopWidth) / skeletonWidth;
-		float scaleY = static_cast<float>(desktopHeight) / skeletonHeight;
+		const float scaleX = static_cast<float>(desktopWidth) / skeletonWidth;
+		const float scaleY = static_cast<float>(desktopHeight) / skeletonHeight;
 
 		m_fDefaultScale = (scaleX < scaleY) ? scaleX : scaleY;
 	}
 }
 
-void CRaylibSpinePlayer::workOutDefaultSizeAndOffset()
+bool CRaylibSpinePlayer::workOutDefaultSizeAndOffset()
 {
 	static constexpr float kMaxDimension = 16384.f;
 
@@ -106,5 +106,9 @@ void CRaylibSpinePlayer::workOutDefaultSizeAndOffset()
 	{
 		m_fBaseSize.x = fWidth;
 		m_fBaseSize.y = fHeight;
+
+		return true;
 	}
+
+	return false;
 }
