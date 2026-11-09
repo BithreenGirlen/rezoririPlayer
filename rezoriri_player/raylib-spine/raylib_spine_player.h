@@ -9,8 +9,11 @@ public:
 	CRaylibSpinePlayer() = default;
 	virtual ~CRaylibSpinePlayer() = default;
 
-	void redraw(const RenderTexture2D* pRenderTarget);
+	void redraw(const float scale = 1.f, const float offsetX = 0.f, const float offsetY = 0.f);
 
+	/// @brief Work out scale and offsets to be applied to vertices so as to be within the target rectangle 
+	/// @return Vector3 in the order of scale, offset X, offset Y
+	Vector3 calculateTransformScaleAndOffsets(int targetWidth, int targetHeight) const noexcept;
 	Rectangle getCurrentBoundingOfSlot(const char* slotName, size_t nameLength) const;
 	template<size_t nameSize>
 	Rectangle getCurrentBoundingOfSlot(const char(&slotName)[nameSize]) const

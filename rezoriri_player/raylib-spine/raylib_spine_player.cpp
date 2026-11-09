@@ -3,39 +3,33 @@
 #include "raylib_spine_player.h"
 
 
-void CRaylibSpinePlayer::redraw(const RenderTexture2D* pRenderTarget)
+void CRaylibSpinePlayer::redraw(const float scale, const float offsetX, const float offsetY)
 {
-	if (m_drawables.empty())return;
-
-	int targetWidth = 0, targetHeight = 0;
-	if (pRenderTarget == nullptr)
+	if (!m_drawables.empty())
 	{
-		targetWidth = ::GetScreenWidth();
-		targetHeight = ::GetScreenHeight();
-	}
-	else
-	{
-		targetWidth = pRenderTarget->texture.width;
-		targetHeight = pRenderTarget->texture.height;
-	}
-
-	float fX = (m_fBaseSize.x * m_fSkeletonScale - targetWidth) / 2.f;
-	float fY = (m_fBaseSize.y * m_fSkeletonScale - targetHeight) / 2.f;
-
-	if (!m_isDrawOrderReversed)
-	{
-		for (size_t i = 0; i < m_drawables.size(); ++i)
+		if (!m_isDrawOrderReversed)
 		{
-			m_drawables[i]->draw(m_fSkeletonScale, -fX, -fY);
+			for (size_t i = 0; i < m_drawables.size(); ++i)
+			{
+				m_drawables[i]->draw(scale, offsetX, offsetY);
+			}
+		}
+		else
+		{
+			for (long long i = m_drawables.size() - 1; i >= 0; --i)
+			{
+				m_drawables[i]->draw(scale, offsetX, offsetY);
+			}
 		}
 	}
-	else
-	{
-		for (long long i = m_drawables.size() - 1; i >= 0; --i)
-		{
-			m_drawables[i]->draw(m_fSkeletonScale, -fX, -fY);
-		}
-	}
+}
+
+Vector3 CRaylibSpinePlayer::calculateTransformScaleAndOffsets(int targetWidth, int targetHeight) const noexcept
+{
+	return Vector3(
+		m_fSkeletonScale,
+		(targetWidth - m_fBaseSize.x * m_fSkeletonScale) / 2.f,
+		(targetHeight - m_fBaseSize.y * m_fSkeletonScale) / 2.f);
 }
 
 Rectangle CRaylibSpinePlayer::getCurrentBoundingOfSlot(const char* slotName, size_t nameLength) const

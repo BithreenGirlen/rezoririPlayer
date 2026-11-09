@@ -163,5 +163,4 @@ protected:
 	void clearAnimationTracks();
 };
 
-
 #endif // !SPINE_PLAYER_H_

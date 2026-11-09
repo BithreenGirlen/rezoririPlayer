@@ -2,11 +2,9 @@
 
 #include "raylib_main_window.h"
 #include "raylib_input.h"
-#include "raylib-spine/spine_file_verifier.h"
 #include "raylib_filesystem_utility.h"
 #include "raylib_render_target_scope.h"
 #include "path_utility.h"
-#include "rezoriri.h"
 
 #include "windows/win_dialogue.h" /* Raylib does not support native file-select-dialogue. */
 #include "../rezoriri/win_text.h" /* Raylib does not support character encoding. */
@@ -74,12 +72,13 @@ void CRaylibMainWindow::display()
 
 			if (m_spineRenderTexture.isHandleValid())
 			{
+				const Texture& texture = m_spineRenderTexture.get().texture;
 				{
 					CRaylibRenderTargetScope renderTargetScope(m_spineRenderTexture.get());
-					m_sceneSpinePlayer.redraw(&m_spineRenderTexture.get());
+					const Vector3 scaleAndOffsets = m_sceneSpinePlayer.calculateTransformScaleAndOffsets(texture.width, texture.height);
+					m_sceneSpinePlayer.redraw(scaleAndOffsets.x, scaleAndOffsets.y, scaleAndOffsets.z);
 				}
 
-				const Texture& texture = m_spineRenderTexture.get().texture;
 				const Rectangle srcRec =
 				{
 					.x = 0.f,
