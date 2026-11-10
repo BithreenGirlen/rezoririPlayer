@@ -198,27 +198,16 @@ void CRezoririSceneCrafter::prepareText()
 		const auto& wrapText = [&]()
 			-> void
 			{
-				if (nRead != nLast)
+				const size_t nLength = nRead - nLast;
+				if (nLength != 0)
 				{
-					m_formatedSceneText.append(&sceneText[nLast], nRead - nLast);
-					if (m_formatedSceneText.back() != '\n')
-					{
-						m_formatedSceneText.push_back('\n');
-					}
+					m_formatedSceneText.append(&sceneText[nLast], nLength);
 				}
 
-				accumulatedWidth = 0;
 				nLast = nRead;
 			};
 
-		static const auto PointSizeToDip = [](float fPointSize, unsigned int dpi)
-			-> float
-			{
-				return (fPointSize / 72.f) * dpi;
-			};
-		static constexpr unsigned int kDpi = 96;
-
-		const float scale = PointSizeToDip(m_fontInfo.fontSize, kDpi) / static_cast<float>(pFont->baseSize);
+		const float scale = m_fontInfo.fontSize / static_cast<float>(pFont->baseSize);
 		const float screenWidth = static_cast<float>(::GetScreenWidth()) / scale;
 		for (; nRead < sceneText.size();)
 		{
@@ -226,44 +215,43 @@ void CRezoririSceneCrafter::prepareText()
 			const int codePoint = ::GetCodepointNext(&sceneText[nRead], &nAdvanced);
 			const int glyphIndex = ::GetGlyphIndex(*pFont, codePoint);
 
-			nRead += static_cast<size_t>(nAdvanced);
-
-			const float glyphWidth =
-				pFont->glyphs[glyphIndex].advanceX > 0
+			const float glyphWidth = pFont->glyphs[glyphIndex].advanceX > 0
 				? pFont->glyphs[glyphIndex].advanceX
 				: pFont->recs[glyphIndex].width + pFont->glyphs[glyphIndex].offsetX;
 
 			if (codePoint == static_cast<int>('\n'))
 			{
 				wrapText();
-				continue;
+				accumulatedWidth = 0;
 			}
 			else if (codePoint == static_cast<int>('\r'))
 			{
-				continue;
+				/* Nothing to do; easier to read than "else if (... != '\r')" */
 			}
 			else
 			{
 				accumulatedWidth += glyphWidth;
+				accumulatedWidth += m_fontInfo.spacing;
+				if (::isgreater(accumulatedWidth, screenWidth))
+				{
+					wrapText();
+					if (!m_formatedSceneText.empty() && m_formatedSceneText.back() != '\n')
+					{
+						m_formatedSceneText.push_back('\n');
+					}
+					accumulatedWidth = glyphWidth;
+				}
 			}
 
-			if (::isgreater(accumulatedWidth, screenWidth))
-			{
-				wrapText();
-				accumulatedWidth = glyphWidth;
-			}
+			nRead += static_cast<size_t>(nAdvanced);
 		}
 
-		if (::isgreater(accumulatedWidth, 0.f))
+		/* Residue */
+		if (nRead != nLast)
 		{
 			wrapText();
 		}
 	}
 
-	text_utility::ReplaceAll(m_formatedSceneText, "\n\n", "\n");
-
-	/* size_t is 20 digits at most. */
-	char indexBuffer[64]{};
-	sprintf_s(indexBuffer, "%zu/%zu", m_nTextIndex + 1, m_textData.size());
-	m_formatedSceneText += indexBuffer;
+	m_formatedSceneText += ::TextFormat("\n%zu/%zu", m_nTextIndex + 1, m_textData.size());
 }

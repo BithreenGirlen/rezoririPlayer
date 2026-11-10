@@ -436,8 +436,8 @@ void CRaylibMainWindow::resizeWindow()
 	const int rendertextureHeight = windowHeight - m_windowState.lastMenuBarHeight;
 
 	m_spineRenderTexture.reset(::LoadRenderTexture(rendertextureWidth, rendertextureHeight));
-	updateSceneText();
 	m_sceneCrafter.onResize();
+	updateSceneText();
 }
 
 void CRaylibMainWindow::alignWindowToTheTopLeftOfMonitor()

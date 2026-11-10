@@ -5,10 +5,9 @@
 #include "adv.h"
 
 /*
-* Raylib does not allow ::BeginTextureMode and EndXXXXX to be nested, 
-* which makes it so hard to other classes than main one to have draw function.
-* On the other hand, it is tedious to rely on rlgl anymore for such a simple player.
-* So this class is designed to manage and pass scene data, and not to update/draw.
+* Raylib does not allow ::BeginTextureMode and ::EndXXXXX to be nested, 
+* which makes it so hard to other classes than main one to have draw() function.
+* So this class is designed just to manage and pass scene data.
 */
 
 /// @brief 場面管理器
@@ -62,7 +61,7 @@ private:
 	{
 		Font* pFont = nullptr;
 		float fontSize = 48.f;
-		float spacing = 10.f;
+		float spacing = 4.f;
 		/* Usually DPI is required, but Raylib does not provide the way to handle it. */
 	};
 	FontInfo m_fontInfo;
