@@ -36,16 +36,15 @@ bool CRezoririSceneCrafter::loadScenario(const std::string& sceneSpineFolderPath
 	if (skeletonMetaData.skeletonFormat == spine_file_verifier::SkeletonFormat::Neither)return false;
 	if (!skeletonMetaData.version.starts_with("4.2"))return false;
 
-	std::vector<std::string> textureFilePath;
-	std::vector<std::string> atlasFileData;
-	std::vector<std::string> skelFileData;
-
-	textureFilePath.emplace_back(path_utility::ExtractParentPath(atlasFilePaths[0]));
-	atlasFileData.push_back(std::move(atlasFile));
-	skelFileData.push_back(std::move(skeletonFile));
+	std::string textureDirectory(path_utility::ExtractParentPath(atlasFilePaths[0]));
 
 	const bool isBinaryFormat = skeletonMetaData.skeletonFormat == spine_file_verifier::SkeletonFormat::Binary;
-	const bool hasLoaded = spinePlayer.loadSpineFromMemory(atlasFileData, textureFilePath, skelFileData, isBinaryFormat);
+	spinePlayer.clearDrawables();
+	const bool hasLoaded = spinePlayer.loadSpineFromMemory(
+		atlasFile.data(), atlasFile.size(),
+		textureDirectory.data(),
+		skeletonFile.data(), skeletonFile.size(),
+		isBinaryFormat);
 	if (!hasLoaded) return false;
 
 	spinePlayer.setPhysicsAll(CRaylibSpineDrawable::Physics::None);
@@ -162,7 +161,7 @@ void CRezoririSceneCrafter::clearScenerioData()
 	m_nTextIndex = 0;
 
 	m_animationNames.clear();
-	m_nLastAnimationIndex = 0;
+	m_nLastAnimationIndex = static_cast<size_t>(-1LL);
 
 	m_lebelData.clear();
 

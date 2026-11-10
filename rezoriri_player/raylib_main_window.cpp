@@ -664,6 +664,8 @@ bool CRaylibMainWindow::loadScenario(const std::string& sceneSpineFolderPath)
 		setSpinePlayerSize();
 		resetSpinePlayerScale();
 
+		updateScene();
+
 		m_spineClock.restart();
 		m_textClock.restart();
 	}

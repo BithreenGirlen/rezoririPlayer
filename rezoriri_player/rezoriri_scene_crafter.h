@@ -52,7 +52,7 @@ private:
 	size_t m_nTextIndex = 0;
 
 	std::vector<std::string> m_animationNames;
-	size_t m_nLastAnimationIndex = 0;
+	size_t m_nLastAnimationIndex = static_cast<size_t>(-1LL);
 
 	std::vector<adv::LabelDatum> m_lebelData;
 

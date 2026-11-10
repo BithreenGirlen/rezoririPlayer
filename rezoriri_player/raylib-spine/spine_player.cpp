@@ -3,80 +3,82 @@
 #include "spine_loader.h"
 
 
-/*ファイル取り込み*/
-bool CSpinePlayer::loadSpineFromFile(const std::vector<std::string>& atlasFilePaths, const std::vector<std::string>& skeletonFilePaths, bool isBinarySkel)
+void CSpinePlayer::clearDrawables()
 {
-	if (atlasFilePaths.size() != skeletonFilePaths.size())return false;
-	clearDrawables();
+	m_drawables.clear();
 
-	for (size_t i = 0; i < atlasFilePaths.size(); ++i)
-	{
-		const std::string& atlasFilePath = atlasFilePaths[i];
-		const std::string& skeletonPath = skeletonFilePaths[i];
+	m_animationNames.clear();
+	m_nAnimationIndex = 0;
 
-		SpineSharedPtr<spine::Atlas> pAtlas = spine_loader::CreateAtlasFromFile(atlasFilePath.c_str(), &m_textureLoader);
-		if (pAtlas.get() == nullptr)continue;
+	m_skinNames.clear();
+	m_nSkinIndex = 0;
 
-		SpineSharedPtr<spine::SkeletonData> pSkeletonData = isBinarySkel ?
-			spine_loader::ReadBinarySkeletonFromFile(skeletonPath.c_str(), pAtlas.get()) :
-			spine_loader::ReadTextSkeletonFromFile(skeletonPath.c_str(), pAtlas.get());
-		if (pSkeletonData.get() == nullptr)return false;
-
-		SpineUniquePtr<CSpineDrawable> pDrawable = SpineUniquePtr<CSpineDrawable>::MakeUnique(pAtlas, pSkeletonData);
-		if (pDrawable == nullptr)continue;
-
-		m_drawables.push_back(std::move(pDrawable));
-	}
-
-	if (m_drawables.empty())return false;
-
-	return setupDrawables();
-}
-/*メモリ取り込み*/
-bool CSpinePlayer::loadSpineFromMemory(const std::vector<std::string>& atlasFileData, const std::vector<std::string>& textureDirectories, const std::vector<std::string>& skeletonFileData, bool isBinarySkel)
-{
-	if (atlasFileData.size() != skeletonFileData.size() || atlasFileData.size() != textureDirectories.size())return false;
-	clearDrawables();
-
-	for (size_t i = 0; i < atlasFileData.size(); ++i)
-	{
-		const std::string& atlasFileDatum = atlasFileData[i];
-		const std::string& textureDirectory = textureDirectories[i];
-		const std::string& skeletonFileDatum = skeletonFileData[i];
-
-		SpineSharedPtr<spine::Atlas> pAtlas = spine_loader::CreateAtlasFromMemory(atlasFileDatum.c_str(), static_cast<int>(atlasFileDatum.size()), textureDirectory.c_str(), &m_textureLoader);
-		if (pAtlas.get() == nullptr)continue;
-
-		SpineSharedPtr<spine::SkeletonData> pSkeletonData = isBinarySkel ?
-			spine_loader::ReadBinarySkeletonFromMemory(reinterpret_cast<const unsigned char*>(skeletonFileDatum.data()), static_cast<int>(skeletonFileDatum.size()), pAtlas.get()) :
-			spine_loader::ReadTextSkeletonFromMemory(skeletonFileDatum.data(), pAtlas.get());
-		if (pSkeletonData.get() == nullptr)return false;
-
-		SpineUniquePtr<CSpineDrawable> pDrawable = SpineUniquePtr<CSpineDrawable>::MakeUnique(pAtlas, pSkeletonData);
-		if (pDrawable == nullptr)continue;
-
-		m_drawables.push_back(std::move(pDrawable));
-	}
-
-	if (m_drawables.empty())return false;
-
-	return setupDrawables();
+	m_slotNames.clear();
 }
 
-bool CSpinePlayer::addSpineFromFile(const char* atlasFilePath, const char* skelFilePath, bool isBinarySkel)
+bool CSpinePlayer::loadSpineFromFile(const char* atlasFilePath, const char* skeletonFilePath, bool isBinarySkel)
 {
-	if (m_drawables.empty() || atlasFilePath == nullptr || skelFilePath == nullptr)return false;
-
 	SpineSharedPtr<spine::Atlas> pAtlas = spine_loader::CreateAtlasFromFile(atlasFilePath, &m_textureLoader);
-	if (pAtlas.get() == nullptr)return false;
+	if (pAtlas == nullptr) return false;
 
 	SpineSharedPtr<spine::SkeletonData> pSkeletonData = isBinarySkel ?
-		spine_loader::ReadBinarySkeletonFromFile(skelFilePath, pAtlas.get()) :
-		spine_loader::ReadTextSkeletonFromFile(skelFilePath, pAtlas.get());
-	if (pSkeletonData.get() == nullptr)return false;
+		spine_loader::ReadBinarySkeletonFromFile(skeletonFilePath, pAtlas.get()) :
+		spine_loader::ReadTextSkeletonFromFile(skeletonFilePath, pAtlas.get());
+	if (pSkeletonData == nullptr)return false;
 
-	auto pDrawable = SpineUniquePtr<CSpineDrawable>::MakeUnique(pAtlas, pSkeletonData);
+	SpineUniquePtr<CSpineDrawable> pDrawable = SpineUniquePtr<CSpineDrawable>::MakeUnique(pAtlas, pSkeletonData);
 	if (pDrawable == nullptr)return false;
+
+	return addDrawable(pDrawable);
+}
+
+bool CSpinePlayer::loadSpineFromMemory(const char* atlasFileData, size_t atlasFileDataLength, const char* textureDirectory, const char* skeletonFileData, size_t skeletonFileDataLength, bool isBinarySkel)
+{
+	SpineSharedPtr<spine::Atlas> pAtlas = spine_loader::CreateAtlasFromMemory(atlasFileData, static_cast<int>(atlasFileDataLength), textureDirectory, &m_textureLoader);
+	if (pAtlas == nullptr) return false;
+
+	SpineSharedPtr<spine::SkeletonData> pSkeletonData = isBinarySkel ?
+		spine_loader::ReadBinarySkeletonFromMemory(reinterpret_cast<const unsigned char*>(skeletonFileData), static_cast<int>(skeletonFileDataLength), pAtlas.get()) :
+		spine_loader::ReadTextSkeletonFromMemory(skeletonFileData, pAtlas.get());
+	if (pSkeletonData == nullptr)return false;
+
+	SpineUniquePtr<CSpineDrawable> pDrawable = SpineUniquePtr<CSpineDrawable>::MakeUnique(pAtlas, pSkeletonData);
+	if (pDrawable == nullptr) return false;
+
+	return addDrawable(pDrawable);
+}
+
+bool CSpinePlayer::addDrawable(SpineUniquePtr<CSpineDrawable>& pDrawable)
+{
+	spine::SkeletonData* pSkeletonDatum = pDrawable->skeleton()->getData();
+
+	auto& animations = pSkeletonDatum->getAnimations();
+	for (size_t i = 0; i < animations.size(); ++i)
+	{
+		const char* szAnimationName = animations[i]->getName().buffer();
+		if (szAnimationName == nullptr)continue;
+
+		const auto& iter = std::find(m_animationNames.begin(), m_animationNames.end(), szAnimationName);
+		if (iter == m_animationNames.cend())m_animationNames.push_back(szAnimationName);
+	}
+
+	auto& skins = pSkeletonDatum->getSkins();
+	for (size_t i = 0; i < skins.size(); ++i)
+	{
+		const char* szSkinName = skins[i]->getName().buffer();
+		if (szSkinName == nullptr)continue;
+
+		const auto& iter = std::find(m_skinNames.begin(), m_skinNames.end(), szSkinName);
+		if (iter == m_skinNames.cend())m_skinNames.push_back(szSkinName);
+	}
+
+	auto& slots = pSkeletonDatum->getSlots();
+	for (size_t ii = 0; ii < slots.size(); ++ii)
+	{
+		const char* szName = slots[ii]->getName().buffer();
+		const auto& iter = std::find(m_slotNames.begin(), m_slotNames.end(), szName);
+		if (iter == m_slotNames.cend())m_slotNames.push_back(szName);
+	}
 
 	m_drawables.push_back(std::move(pDrawable));
 	if (m_isDrawOrderReversed)
@@ -84,10 +86,12 @@ bool CSpinePlayer::addSpineFromFile(const char* atlasFilePath, const char* skelF
 		std::rotate(m_drawables.rbegin(), m_drawables.rbegin() + 1, m_drawables.rend());
 	}
 
-	restartAnimation();
-	resetScale();
-
 	return true;
+}
+
+bool CSpinePlayer::addDrawable(SpineUniquePtr<CSpineDrawable>&& pDrawable)
+{
+	return addDrawable(pDrawable);
 }
 
 size_t CSpinePlayer::getNumberOfSpines() const noexcept
@@ -99,7 +103,12 @@ bool CSpinePlayer::hasSpineBeenLoaded() const noexcept
 {
 	return !m_drawables.empty();
 }
-/*状態更新*/
+
+const std::vector<SpineUniquePtr<CSpineDrawable>>& CSpinePlayer::getDrawables() const noexcept
+{
+	return m_drawables;
+}
+
 void CSpinePlayer::update(float fDelta)
 {
 	for (const auto& drawable : m_drawables)
@@ -798,59 +807,6 @@ float CSpinePlayer::getTimeScale() const noexcept
 void CSpinePlayer::setTimeScale(float fTimeScale) noexcept
 {
 	m_fTimeScale = fTimeScale;
-}
-/*消去*/
-void CSpinePlayer::clearDrawables()
-{
-	m_drawables.clear();
-
-	m_animationNames.clear();
-	m_nAnimationIndex = 0;
-
-	m_skinNames.clear();
-	m_nSkinIndex = 0;
-
-	m_slotNames.clear();
-}
-
-bool CSpinePlayer::setupDrawables()
-{
-	for (const auto& pDrawable : m_drawables)
-	{
-		spine::SkeletonData* pSkeletonDatum = pDrawable->skeleton()->getData();
-
-		auto& animations = pSkeletonDatum->getAnimations();
-		for (size_t i = 0; i < animations.size(); ++i)
-		{
-			const char* szAnimationName = animations[i]->getName().buffer();
-			if (szAnimationName == nullptr)continue;
-
-			const auto& iter = std::find(m_animationNames.begin(), m_animationNames.end(), szAnimationName);
-			if (iter == m_animationNames.cend())m_animationNames.push_back(szAnimationName);
-		}
-
-		auto& skins = pSkeletonDatum->getSkins();
-		for (size_t i = 0; i < skins.size(); ++i)
-		{
-			const char* szSkinName = skins[i]->getName().buffer();
-			if (szSkinName == nullptr)continue;
-
-			const auto& iter = std::find(m_skinNames.begin(), m_skinNames.end(), szSkinName);
-			if (iter == m_skinNames.cend())m_skinNames.push_back(szSkinName);
-		}
-
-		auto& slots = pSkeletonDatum->getSlots();
-		for (size_t ii = 0; ii < slots.size(); ++ii)
-		{
-			const char* szName = slots[ii]->getName().buffer();
-			const auto& iter = std::find(m_slotNames.begin(), m_slotNames.end(), szName);
-			if (iter == m_slotNames.cend())m_slotNames.push_back(szName);
-		}
-	}
-
-	resetBaseSize();
-
-	return m_animationNames.size() > 0;
 }
 /*位置適用*/
 void CSpinePlayer::updatePosition()

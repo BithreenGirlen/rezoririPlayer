@@ -13,19 +13,26 @@ using FPoint2 = Vector2;
 using CSpineDrawable = CRaylibSpineDrawable;
 using CTextureLoader = CRaylibTextureLoader;
 
+
 class CSpinePlayer
 {
 public:
 	CSpinePlayer() = default;
 	virtual ~CSpinePlayer() = default;
 
-	bool loadSpineFromFile(const std::vector<std::string>& atlasFilePaths, const std::vector<std::string>& skeletonFilePaths, bool isBinarySkel);
-	bool loadSpineFromMemory(const std::vector<std::string>& atlasFileData, const std::vector<std::string>& textureDirectories, const std::vector<std::string>& skeletonFileData, bool isBinarySkel);
+	void clearDrawables();
 
-	bool addSpineFromFile(const char* atlasPath, const char* skelPath, bool isBinarySkel);
+	bool loadSpineFromFile(const char* atlasFilePath, const char* skeletonFilePath, bool isBinarySkel);
+	bool loadSpineFromMemory(const char* atlasFileData, size_t atlasFileDataLength, const char* textureDirectory, const char* skeletonFileData, size_t skeletonFileDataLength, bool isBinarySkel);
+
+	bool addDrawable(SpineUniquePtr<CSpineDrawable>& pDrawable);
+	/// @brief Pass the return value of CSpineDrawable::duplicate();
+	bool addDrawable(SpineUniquePtr<CSpineDrawable>&& pDrawable);
 
 	size_t getNumberOfSpines() const noexcept;
 	bool hasSpineBeenLoaded() const noexcept;
+	/// @brief Intended to be used to duplicate drawable and to add to another Spine player.
+	const std::vector<SpineUniquePtr<CSpineDrawable>>& getDrawables() const noexcept;
 
 	void update(float fDelta);
 
@@ -147,9 +154,6 @@ protected:
 	std::vector<std::string> m_slotNames;
 
 	bool m_isDrawOrderReversed = false;
-
-	void clearDrawables();
-	bool setupDrawables();
 
 	virtual void workOutDefaultScale() noexcept = 0;
 	virtual bool workOutDefaultSizeAndOffset() = 0;
